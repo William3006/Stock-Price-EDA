@@ -1,0 +1,13 @@
+{
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "pythonPath": "/home/kurt/Desktop/Projects/SPEDA/venv/bin/python",
+          "venvPath": "/home/kurt/Desktop/Projects/SPEDA",
+          "venv": "venv"
+        }
+      }
+    }
+  }
+}

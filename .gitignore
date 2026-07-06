@@ -1,0 +1,6 @@
+# .gitignore
+venv/
+*.csv
+Meta_Plots/
+__pycache__/
+*.pyc
