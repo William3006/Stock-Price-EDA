@@ -1,0 +1,9 @@
+7/8/2026
+Segment to 10 1year
+*Rolling Average
+Stationarity
+Volatility
+Correlation Matrix of all parameters
+Identify important parameters and reduce (PCA)
+
+

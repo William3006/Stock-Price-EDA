@@ -1,40 +1,49 @@
 import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yfinance as yf
 
-"""
-For initial collection of data and storage
-    meta = yf.Ticker("META")
-    data = meta.history(period="10y")
-    df = pd.DataFrame(data)
 
-df.to_csv("csv_saves/OHLCV_META_10y.csv", index = False)
-"""
+def load_new(Name_of_stock, Period):
+    ticker = yf.Ticker(name)
+    data = ticker.history(period=period)
+    return pd.DataFrame(data)
 
-# print(data.to_string())
-"""
-For initial visualisation of data and storage of plots
-    plt.plot(data.index, data["Open"], label="Open")
-    plt.plot(data.index, data["Close"], label="Close")
-    plt.xlabel("Date")
-    plt.ylabel("Opening and closing prices")
-    os.makedirs("Meta_Plots", exist_ok=True)
-    plt.savefig("Meta_Plots/OC(1m)")
-"""
-
-df = pd.read_csv("csv_saves/OHLCV_META_10y.csv")
+    
+def load_raw(name, i=None, j=None):
+    if(i==None or j==None):
+        return pd.read_csv(f'csv_saves/{name}.csv')
+    
+    return pd.read_csv(f'csv_saves/{name}.csv', skiprows=i, nrows=j)
 
 
-# single variate analysis
+def save(df, name):
+    df.to_csv(f'csv_saves/{name}', index=False)
+    print(f'Saved Successfully to csv_saves/{name}!')
+    
 
-df["Net"] = df["Close"] - df["Open"]
-df["Profit"] = df["Net"] > 0
-num_of_profit_days = df["Profit"].sum()
+def add_net_profit(raw_data):
+    raw_data["Net"] = raw_data["Close"] - raw_data["Open"]
+    raw_data["Profit"] = raw_data["Net"] > 0
+    return raw_data
 
-df.to_csv("csv_saves/NP_META_10y.csv", index=False)
-print(df, num_of_profit_days)
 
-# multivariate analysis
+def add_rolling(mod1, time_span):
+    mod1['Rolling'] = mod1['Close'].rolling(window=time_span).mean()
+    return mod1
+
+
+#add volatility
+if __name__ == "__main__":
+
+    #testing load function
+    mod = 'NP_META_10y'
+    print(load_raw(mod))
+
+
+
+
+
+
+
