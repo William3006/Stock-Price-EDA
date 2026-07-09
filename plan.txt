@@ -1,8 +1,20 @@
 *Rolling Average
 *Volatility
+*plotall
+*Correlation Matrix(Testing via building a function)
+    Returns vs Volume
+    Volatility vs Volume
+    Net vs Volume
+    Rolling vs Volume
+*Distribution of returns (histogram + skewness/kurtosis)
+*fattails
 
-plotall
-Correlation Matrix of all parameters
+
+Identifiy profit and loss points
+Distribution of returns (histogram + skewness/kurtosis)
+Drawdown analysis 
+Candlestick chart 
+Anomaly/outlier flagging 
 
 after involving multiple stocks:
     Identify important parameters and reduce (PCA)
