@@ -8,15 +8,16 @@
     Rolling vs Volume
 *Distribution of returns (histogram + skewness/kurtosis)
 *fattails
+*Candlestick chart 
 
 
 Identifiy profit and loss points
-Distribution of returns (histogram + skewness/kurtosis)
 Drawdown analysis 
-Candlestick chart 
 Anomaly/outlier flagging 
+Make interactive
 
 after involving multiple stocks:
     Identify important parameters and reduce (PCA)
+    Maybe via localhost //save for future upgrades
 
 

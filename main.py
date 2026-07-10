@@ -129,11 +129,37 @@ def show_fattails(df, size_of_df):
     plt.show()
 
 
+def show_candle_stick(df):
+    data_toplot = df[['Open', 'Close', 'High', 'Low']].copy()
+    plt.figure()
+
+    up   = data_toplot[data_toplot.Close >= data_toplot.Open]
+    down = data_toplot[data_toplot.Close <  data_toplot.Open]
+
+    col1 = 'green'
+    col2 = 'red'
+    width  = 0.3
+    width2 = 0.03
+
+    
+    plt.bar(up.index, up.Close - up.Open,  width,  bottom=up.Open,  color=col1)  # body
+    plt.bar(up.index, up.High  - up.Close, width2, bottom=up.Close, color=col1)  # upper wick
+    plt.bar(up.index, up.Open  - up.Low,   width2, bottom=up.Low,   color=col1)  # lower wick
+
+
+    plt.bar(down.index, down.Open  - down.Close, width,  bottom=down.Close, color=col2)  # body
+    plt.bar(down.index, down.High  - down.Open,  width2, bottom=down.Open,  color=col2)  # upper wick
+    plt.bar(down.index, down.Close - down.Low,   width2, bottom=down.Low,   color=col2)  # lower wick
+
+    plt.xticks(rotation=20, ha='right')
+    plt.tight_layout()
+    plt.show()
+
 
 if __name__ == "__main__":
     # testing load function
     mod = load_raw("NP_META_10y")
-    show_fattails(mod, 2515)
+    show_candle_stick(mod)
 
     # save(mod, 'NP_META_10y')
     #print(mod)
