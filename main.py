@@ -8,6 +8,7 @@ import pandas as pd
 import scipy
 import seaborn as sns
 import yfinance as yf
+from sklearn.ensemble import IsolationForest
 
 
 def load_new(Name_of_stock, Period):
@@ -18,13 +19,14 @@ def load_new(Name_of_stock, Period):
 
 def load_raw(name, i=None, j=None):
     if i is None or j is None:
-        return pd.read_csv(f"csv_saves/{name}.csv")
-
-    return pd.read_csv(f"csv_saves/{name}.csv", skiprows=i, nrows=j)
+        return pd.read_csv(f"csv_saves/{name}.csv", index_col='Date', parse_dates=True)
+    
+    
+    return pd.read_csv(f"csv_saves/{name}.csv", skiprows=i, nrows=j, index_col='Date', parse_dates=True)
 
 
 def save(df, name):
-    df.to_csv(f"csv_saves/{name}.csv", index=False)
+    df.to_csv(f"csv_saves/{name}.csv", index=True)
     print(f"Saved Successfully to csv_saves/{name}.csv!")
 
 
@@ -36,6 +38,7 @@ def add_net_profit(raw_data):
 
 def add_return(df):
     df["Return"] = df["Close"].pct_change()
+    return df
 
 
 def add_rolling(mod1, time_span):
@@ -82,7 +85,10 @@ def plot(df, columns, i, j):
     if save_parameter == "y":
         save_name = input("Enter image name: ")
         plt.savefig(f"Meta_Plots/{save_name}.png")
-
+        ax = plt.gca()
+    plt.gca().xaxis.set_major_locator(plt.MaxNLocator(12))
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
     plt.show()
 
     print(
@@ -111,11 +117,11 @@ def plot_normal_curve(df):
 
 
 def get_kurtosis(df):
-    return scipy.stats.kurtosis(df['Return'].dropna())
+    return scipy.stats.kurtosis(df["Return"].dropna())
 
 
 def get_skewness(df):
-    return scipy.stats.skew(df['Return'].dropna())
+    return scipy.stats.skew(df["Return"].dropna())
 
 
 def show_fattails(df, size_of_df):
@@ -124,34 +130,136 @@ def show_fattails(df, size_of_df):
     plt.plot(x, y)
     kurt_val = get_kurtosis(df)
     skew_val = get_skewness(df)
-    plt.annotate(f'Kurtosis: {kurt_val:.4f}', xy=(0.05, 0.95), xycoords='axes fraction')
-    plt.annotate(f'Skewness: {skew_val:.4f}', xy=(0.80, 0.95), xycoords='axes fraction')
+    plt.annotate(f"Kurtosis: {kurt_val:.4f}", xy=(0.05, 0.95), xycoords="axes fraction")
+    plt.annotate(f"Skewness: {skew_val:.4f}", xy=(0.80, 0.95), xycoords="axes fraction")
     plt.show()
 
 
 def show_candle_stick(df):
-    data_toplot = df[['Open', 'Close', 'High', 'Low']].copy()
+    data_toplot = df[["Open", "Close", "High", "Low"]].copy()
     plt.figure()
 
-    up   = data_toplot[data_toplot.Close >= data_toplot.Open]
-    down = data_toplot[data_toplot.Close <  data_toplot.Open]
+    up = data_toplot[data_toplot.Close >= data_toplot.Open]
+    down = data_toplot[data_toplot.Close < data_toplot.Open]
 
-    col1 = 'green'
-    col2 = 'red'
-    width  = 0.3
+    col1 = "green"
+    col2 = "red"
+    width = 0.3
     width2 = 0.03
 
+    plt.bar(up.index, up.Close - up.Open, width, bottom=up.Open, color=col1)  # body
+    plt.bar(
+        up.index, up.High - up.Close, width2, bottom=up.Close, color=col1
+    )  # upper wick
+    plt.bar(up.index, up.Open - up.Low, width2, bottom=up.Low, color=col1)  # lower wick
+
+    plt.bar(
+        down.index, down.Open - down.Close, width, bottom=down.Close, color=col2
+    )  # body
+    plt.bar(
+        down.index, down.High - down.Open, width2, bottom=down.Open, color=col2
+    )  # upper wick
+    plt.bar(
+        down.index, down.Close - down.Low, width2, bottom=down.Low, color=col2
+    )  # lower wick
+
+    plt.xticks(rotation=20, ha="right")
+    plt.tight_layout()
+    plt.show()
+
+
+def flag_point_outlier(df, show_plot=False):
+    # Utilizes IQR
+    data = df["Return"]
+    window_size = 20
+    df["Rolling_q1"] = data.rolling(window=window_size).quantile(0.25)
+    df["Rolling_q3"] = data.rolling(window=window_size).quantile(0.75)
+    df["Rolling_IQR"] = df["Rolling_q3"] - df["Rolling_q1"]
+
+    k = 1.5
+    lower_limit=df["Rolling_q1"] - k * df["Rolling_IQR"]
+    upper_limit=df["Rolling_q3"] + k * df["Rolling_IQR"]
     
-    plt.bar(up.index, up.Close - up.Open,  width,  bottom=up.Open,  color=col1)  # body
-    plt.bar(up.index, up.High  - up.Close, width2, bottom=up.Close, color=col1)  # upper wick
-    plt.bar(up.index, up.Open  - up.Low,   width2, bottom=up.Low,   color=col1)  # lower wick
+    df["IQR_flag"] = (data < lower_limit) | (
+        data > upper_limit
+    )
+
+    if show_plot:
+        plot_outlined_data(df, 'IQR_flag', lower_limit, upper_limit)
+    return df
 
 
-    plt.bar(down.index, down.Open  - down.Close, width,  bottom=down.Close, color=col2)  # body
-    plt.bar(down.index, down.High  - down.Open,  width2, bottom=down.Open,  color=col2)  # upper wick
-    plt.bar(down.index, down.Close - down.Low,   width2, bottom=down.Low,   color=col2)  # lower wick
+def z_flag(df, show_plot=False):
+    data = df['Return']
+    window_size = 20
+    df['Rolling_Mean'] = data.rolling(window=window_size).mean()
+    df['Rolling_std'] = data.rolling(window=window_size).std()
+    df['Rolling_z'] = (data - df['Rolling_Mean'])/df['Rolling_std']
 
-    plt.xticks(rotation=20, ha='right')
+    threshhold = 3.0
+
+    df['Z_flag'] = df['Rolling_z'].abs() > threshhold 
+    if show_plot:
+        plot_outlined_data(df, 'Z_flag', None, None)
+    return df
+
+
+def flag_isolation_forest(df, features, show_plot=False):
+    #default_features = ['Return', 'Rolling_std', 'Rolling_Mean']
+    if features is None:
+        features = ['Return', 'Rolling_std', 'Rolling_Mean']
+    X = df[features].dropna()
+    clf = IsolationForest(contamination=0.05, random_state=42)
+    X['IF_flag'] = clf.fit_predict(X) == -1  # -1 = outlier, 1 = normal
+    
+    df['IF_flag'] = X['IF_flag']
+    df['IF_flag'] = df['IF_flag'].fillna(False)
+    
+    if show_plot:
+        plot_outlined_data(df, 'IF_flag', None, None)
+    return df
+    
+
+def anamoly_detection(df, features=None, combined_plot=False, show_individual_plot=False):
+    df = flag_point_outlier(df, show_individual_plot)
+    df = z_flag(df, show_individual_plot)
+    df = flag_isolation_forest(df, features, show_individual_plot)
+    
+    df['Flag_count'] = df['IQR_flag'].astype(int) + df['Z_flag'].astype(int) + df['IF_flag'].astype(int)
+    df['Flagged'] = df['Flag_count'] >= 2
+    
+    if combined_plot:
+        plot_outlined_data(df, 'Flagged', None, None)
+    
+    return df
+
+
+def drawdown_analysis(df, show_plot=False):
+    data = df['Close']
+
+    df['max_cumclosing'] = data.cummax()
+    df['Drawdown'] = (data - df['max_cumclosing'])/df['max_cumclosing']
+    if show_plot:
+        plot(df, ['Drawdown'], 0, 2515)
+        
+    return df
+
+def plot_outlined_data(df, Bool_Flag, lower_limit_axis, upper_limit_axis):
+    fig, ax = plt.subplots(figsize=(14, 5))
+    ax.plot(df.index, df['Return'], color='steelblue', linewidth=0.8, label='Return')
+    if lower_limit_axis is not None:
+        ax.plot(df.index, lower_limit_axis, color='gray', linewidth=0.6, linestyle='--', label='Lower fence')
+    if upper_limit_axis is not None:
+        ax.plot(df.index, upper_limit_axis, color='gray', linewidth=0.6, linestyle='--', label='Upper fence')
+    flagged = df[df[Bool_Flag]]
+    ax.scatter(flagged.index, flagged['Return'], color='red', s=20, zorder=5, label='Outlier')
+    ax.set_title(f'Return outliers ({Bool_Flag})')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Return')
+    ax.legend()
+    ax = plt.gca()
+    ax.xaxis.set_major_locator(plt.MaxNLocator(12))  # ~one per year
+    plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     plt.show()
 
@@ -159,7 +267,17 @@ def show_candle_stick(df):
 if __name__ == "__main__":
     # testing load function
     mod = load_raw("NP_META_10y")
-    show_candle_stick(mod)
+    #print(mod.index)
+    #anamoly_detection(mod, combined_plot=True)
+    #Testing for a differnt ticker, hope it works...
 
+
+    mod2 = load_new("AAPL", "10y")
+    add_return(mod2)
+    add_rolling(mod2, 20)
+    add_volatility(mod2, 20)
+    anamoly_detection(mod2, combined_plot=True)
+    drawdown_analysis(mod2, show_plot=True)
+    show_fattails(mod2, 50)
     # save(mod, 'NP_META_10y')
-    #print(mod)
+    # print(mod)
