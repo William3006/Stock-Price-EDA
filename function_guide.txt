@@ -1,0 +1,43 @@
+data/loader.py
+
+load_new(ticker_string, period_string) — e.g. load_new("META", "10y")
+load_raw(name, i=None, j=None) — name is csv filename without extension
+save(df, name) — saves with Date as index, make sure index=True
+
+features/features.py
+
+add_net_profit(df) — needs Open and Close columns
+add_return(df) — needs Close, doesn't return df (silent bug to fix later)
+add_rolling(df, time_span) — needs Close, time_span is int days
+add_volatility(df, rolling) — needs Close, rolling is int days
+
+plots/plots.py
+
+plot(df, columns, i, j) — columns is a list, i/j are iloc row indices
+plot_outlined_data(df, Bool_Flag, lower_limit_axis, upper_limit_axis) — Bool_Flag is column name string, pass None for no fences, needs Return column
+show_candle_stick(df) — needs Open, Close, High, Low columns, too dense for 10y use on short windows only
+
+analysis/anomaly.py
+
+flag_point_outlier(df, show_plot=False) — needs Return column
+z_flag(df, show_plot=False) — needs Return column
+flag_isolation_forest(df, features=None, show_plot=False) — needs Rolling_std and Rolling_Mean if using defaults, run z_flag first
+anomaly_detection(df, features=None, combined_plot=False, show_individual_plot=False) — runs all three, needs Return, run z_flag before this
+
+analysis/fattails.py
+
+get_kurtosis(df) — needs Return, returns float
+get_skewness(df) — needs Return, returns float
+plot_histogram(df, size_of_df) — needs Return, size_of_df is bin count
+plot_normal_curve(df) — needs Return, returns (x, y) tuple, use with plt.plot(x, y)
+show_fattails(df, size_of_df) — needs Return, combines histogram + normal curve + annotations
+add_Correlation_matrix(df, columns) — columns is a list of column name strings
+plot_heatmap(matrix) — takes output of add_Correlation_matrix directly
+
+analysis/drawdown.py
+
+drawdown_analysis(df, show_plot=False) — needs Close, adds max_cumclosing and Drawdown columns
+
+analysis/report.py
+
+generate_report(df, ticker) — needs Return, Volatility, Drawdown, Flagged, Profit columns, run full pipeline before calling
