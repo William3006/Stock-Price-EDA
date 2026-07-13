@@ -1,5 +1,7 @@
 import matplotlib
-matplotlib.use("module://matplotlib-backend-kitty")
+import sys
+if sys.platform == 'linux':
+    matplotlib.use("module://matplotlib-backend-kitty")
 from sklearn.ensemble import IsolationForest
 from plots.plots import plot_outlined_data
 
