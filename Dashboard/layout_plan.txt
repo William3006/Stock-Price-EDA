@@ -1,0 +1,12 @@
+View CSV
+Price Overview
+Returns and Volatility
+Drawdown Analysis
+Anamoly Detection
+Fat Tails
+Correlation Matrix
+
+
+
+For later
+    add popular tickers
