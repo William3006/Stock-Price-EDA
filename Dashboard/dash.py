@@ -82,3 +82,4 @@ with tab6:
 
 if "data_loaded" not in st.session_state:
     input_dialog()
+    ######################
