@@ -1,12 +1,10 @@
-View CSV
-Price Overview
-Returns and Volatility
-Drawdown Analysis
-Anamoly Detection
-Fat Tails
-Correlation Matrix
-
-
+Rolling
+Info
+Guards
+README
+Last loaded timestamp
+add popular tickers
+Next button bug fix
 
 For later
-    add popular tickers
+    Multiple Tickers

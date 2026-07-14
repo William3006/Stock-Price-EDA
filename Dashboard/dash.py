@@ -1,22 +1,18 @@
 import streamlit as st
 import pandas as pd
+import os
 import sys
 sys.path.append("..")
 from data.loader import load_new, load_raw, save
+from plots.plots import show_candle_stick, show_returns_volatility, show_drawdown, show_anomaly_detection, show_fat_tails, show_correlation_heatmap
 
 
-# ── page config ───────────────────────────────────────────────────────────────
 st.set_page_config(page_title="SPEDA", layout="wide")
-st.title("SPEDA — Stock Price Exploratory Data Analysis")
 
-# ── sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.header("Controls")
-    ticker = st.text_input("Ticker", value="META")
-    period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y", "10y"], index=3)
-
-# ── data loading ──────────────────────────────────────────────────────────────
-
+#rerun count(needs to be removed after finishing)
+if "rerun_count" not in st.session_state:
+    st.session_state.rerun_count = 0
+st.session_state.rerun_count += 1
 
 def loading(ticker, period, save_name):
     df = load_new(ticker, period)
@@ -29,31 +25,64 @@ def loading(ticker, period, save_name):
 def input_dialog():
     if "step" not in st.session_state:
         st.session_state.step = 1
-
     if st.session_state.step == 1:
         st.session_state.ticker = st.text_input("Ticker")
         st.session_state.save_name = st.text_input("File Name")
         if st.button("Next"):
             st.session_state.step = 2
-            st.rerun()
-
     elif st.session_state.step == 2:
         st.session_state.period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y", "5y", "10y"])
         col1, col2 = st.columns([1, 1])
         with col1:
             if st.button("Back"):
                 st.session_state.step = 1
-                st.rerun()
         with col2:
             if st.button("Load", use_container_width=True):
                 with st.spinner("Fetching data..."):
-                    loading(...)
-    
-        
+                    st.session_state.df = loading(
+                        st.session_state.ticker,
+                        st.session_state.period,
+                        st.session_state.save_name
+                    )
+                st.session_state.step = 1
+                st.rerun()
 
-# ── tabs ──────────────────────────────────────────────────────────────────────
+@st.dialog("Load Saved Data")
+def load_saved_dialog():
+    files = os.listdir("csv_saves")
+    selected = st.selectbox("Select File", files)
+    if st.button("Load"):
+        with st.spinner("Loading..."):
+            st.session_state.df = load_raw(selected.replace(".csv", ""))
+            st.session_state.ticker = selected.replace(".csv", "")
+            st.session_state.period = "saved"
+            st.session_state.step = 1
+        st.rerun()
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+#title+info
+st.title("SPEDA — Stock Price Exploratory Data Analysis")
+st.caption(f"Reruns: {st.session_state.rerun_count}")
+if "df" in st.session_state:
+    st.caption(f"{st.session_state.ticker} · {st.session_state.period} · {len(st.session_state.df)} rows")
+
+#triggers
+if "df" not in st.session_state:
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("Load Stock Data"):
+            input_dialog()
+    with col2:
+        if st.button("Load Saved"):
+            load_saved_dialog()
+else:
+    st.success(f"Loaded: {st.session_state.get('ticker')} | {st.session_state.get('period')}")
+    if st.button("Load New Data"):
+        del st.session_state["df"]
+        st.rerun()
+
+
+tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "Overview",
     "Price Overview",
     "Returns & Volatility",
     "Drawdown",
@@ -61,25 +90,77 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Fat Tails",
     "Correlation Matrix"
 ])
-
+with tab0:
+    if "df" in st.session_state:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(show_candle_stick(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_candle")
+            st.plotly_chart(show_drawdown(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_drawdown")
+            st.plotly_chart(show_fat_tails(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_fattails")
+        with col2:
+            st.plotly_chart(show_returns_volatility(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_returns")
+            if len(st.session_state.df) >= 40:
+                charts = show_anomaly_detection(st.session_state.df)
+                st.plotly_chart(charts["Combined (All Methods)"](), use_container_width=True, config={"scrollZoom": True}, key="ov_anomaly")
+            st.plotly_chart(show_correlation_heatmap(st.session_state.df, ["Open", "High", "Low", "Close", "Volume"]), use_container_width=True, config={"scrollZoom": True}, key="ov_corr")
+    else:
+        st.info("Load a stock to get started.")
 with tab1:
-    st.write("candlestick goes here")
+    if "df" in st.session_state:
+        fig = show_candle_stick(st.session_state.df)
+        st.plotly_chart(fig, use_container_width=True, config={
+            "scrollZoom": True,
+            "modeBarButtonsToRemove": ["select2d", "lasso2d", "zoom2d"],
+            "modeBarButtonsToAdd": ["pan2d"],
+        })
+    else:
+        st.info("Load a stock to get started.")
 
 with tab2:
-    st.write("returns + rolling vol goes here")
+    if "df" in st.session_state:
+        fig = show_returns_volatility(st.session_state.df)
+        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+    else:
+        st.info("Load a stock to get started.")
 
 with tab3:
-    st.write("drawdown goes here")
+    if "df" in st.session_state:
+        fig = show_drawdown(st.session_state.df)
+        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+    else:    
+        st.info("Load a stock to get started")
 
 with tab4:
-    st.write("anomaly detection goes here")
+    if "df" in st.session_state:
+        if len(st.session_state.df) < 40:
+            st.warning("Not enough data for anomaly detection — load at least 3 months.")
+        else:
+            charts = show_anomaly_detection(st.session_state.df)
+            method = st.selectbox("Method", list(charts.keys()))
+            st.plotly_chart(charts[method](), use_container_width=True, config={"scrollZoom": True})
+    else:
+        st.info("Load a stock to get started.")
 
 with tab5:
-    st.write("fat tails goes here")
+    if "df" in st.session_state:
+        fig = show_fat_tails(st.session_state.df)
+        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+    else:
+        st.info("Load a stock to get started.")
 
 with tab6:
-    st.write("correlation matrix goes here")
-
-if "data_loaded" not in st.session_state:
-    input_dialog()
-    ######################
+    if "df" in st.session_state:
+        presets = {
+            "Price Action": ["Open", "High", "Low", "Close", "Volume"],
+            "Returns Based": ["Return", "Volatility", "Drawdown"],
+            "Full": ["Open", "High", "Low", "Close", "Volume", "Return", "Volatility", "Drawdown"],
+        }
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            preset = st.selectbox("Preset", list(presets.keys()))
+        with col2:
+            rolling = st.toggle("Rolling", value=False)
+        fig = show_correlation_heatmap(st.session_state.df, presets[preset], rolling=rolling)
+        st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+    else:
+        st.info("Load a stock to get started.")
