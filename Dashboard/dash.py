@@ -4,15 +4,11 @@ import os
 import sys
 sys.path.append("..")
 from data.loader import load_new, load_raw, save
-from plots.plots import show_candle_stick, show_returns_volatility, show_drawdown, show_anomaly_detection, show_fat_tails, show_correlation_heatmap
+from plots.plotly_plots import show_candle_stick, show_returns_volatility, show_drawdown, show_anomaly_detection, show_fat_tails, show_correlation_heatmap
 
 
 st.set_page_config(page_title="SPEDA", layout="wide")
 
-#rerun count(needs to be removed after finishing)
-if "rerun_count" not in st.session_state:
-    st.session_state.rerun_count = 0
-st.session_state.rerun_count += 1
 
 def loading(ticker, period, save_name):
     df = load_new(ticker, period)
