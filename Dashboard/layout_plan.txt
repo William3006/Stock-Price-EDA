@@ -1,10 +1,10 @@
-Rolling
-Info
-Guards
+*Rolling
+*Info
+*Guards
 README
-Last loaded timestamp
-add popular tickers
-Next button bug fix
+*Last loaded timestamp
+*add popular tickers
+
 
 For later
     Multiple Tickers

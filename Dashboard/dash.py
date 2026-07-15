@@ -19,14 +19,21 @@ def loading(ticker, period, save_name):
     save(df, save_name)
     df_loaded = load_raw(save_name)
     st.text("Saved and loaded successfully")
+    st.session_state.loaded_at = pd.Timestamp.now().strftime("%H:%M:%S")
     return df_loaded
+
+
 
 @st.dialog("Load Stock Data")
 def input_dialog():
     if "step" not in st.session_state:
         st.session_state.step = 1
     if st.session_state.step == 1:
-        st.session_state.ticker = st.text_input("Ticker")
+        popular = ["", "META", "AAPL", "GOOGL", "MSFT", "TSLA", "NVDA", "AMZN", "SPY", "QQQ"]
+        quick = st.selectbox("Quick Select", popular)
+        if quick:
+            st.session_state.ticker = quick
+        st.session_state.ticker = st.text_input("Or enter ticker", value=st.session_state.get("ticker", ""))
         st.session_state.save_name = st.text_input("File Name")
         if st.button("Next"):
             st.session_state.step = 2
@@ -57,13 +64,19 @@ def load_saved_dialog():
             st.session_state.ticker = selected.replace(".csv", "")
             st.session_state.period = "saved"
             st.session_state.step = 1
+        st.session_state.loaded_at = pd.Timestamp.now().strftime("%H:%M:%S")
         st.rerun()
+
+
+with st.sidebar:
+    st.header("Settings")
+    rolling_window = st.slider("Rolling Window", min_value=5, max_value=60, value=20, step=1)
 
 #title+info
 st.title("SPEDA — Stock Price Exploratory Data Analysis")
 st.caption(f"Reruns: {st.session_state.rerun_count}")
 if "df" in st.session_state:
-    st.caption(f"{st.session_state.ticker} · {st.session_state.period} · {len(st.session_state.df)} rows")
+    st.caption(f"{st.session_state.ticker} · {st.session_state.period} · {len(st.session_state.df)} rows · loaded {st.session_state.get('loaded_at', '')}")
 
 #triggers
 if "df" not in st.session_state:
@@ -95,14 +108,14 @@ with tab0:
         col1, col2 = st.columns(2)
         with col1:
             st.plotly_chart(show_candle_stick(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_candle")
-            st.plotly_chart(show_drawdown(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_drawdown")
+            st.plotly_chart(show_drawdown(st.session_state.df, rolling=rolling_window), use_container_width=True, config={"scrollZoom": True}, key="ov_drawdown")
             st.plotly_chart(show_fat_tails(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_fattails")
         with col2:
-            st.plotly_chart(show_returns_volatility(st.session_state.df), use_container_width=True, config={"scrollZoom": True}, key="ov_returns")
+            st.plotly_chart(show_returns_volatility(st.session_state.df, rolling=rolling_window), use_container_width=True, config={"scrollZoom": True}, key="ov_returns")
             if len(st.session_state.df) >= 40:
-                charts = show_anomaly_detection(st.session_state.df)
+                charts = show_anomaly_detection(st.session_state.df, rolling=rolling_window)
                 st.plotly_chart(charts["Combined (All Methods)"](), use_container_width=True, config={"scrollZoom": True}, key="ov_anomaly")
-            st.plotly_chart(show_correlation_heatmap(st.session_state.df, ["Open", "High", "Low", "Close", "Volume"]), use_container_width=True, config={"scrollZoom": True}, key="ov_corr")
+            st.plotly_chart(show_correlation_heatmap(st.session_state.df, ["Open", "High", "Low", "Close", "Volume"], window=rolling_window), use_container_width=True, config={"scrollZoom": True}, key="ov_corr")
     else:
         st.info("Load a stock to get started.")
 with tab1:
@@ -118,14 +131,15 @@ with tab1:
 
 with tab2:
     if "df" in st.session_state:
-        fig = show_returns_volatility(st.session_state.df)
+        fig = show_returns_volatility(st.session_state.df, rolling=rolling_window)
         st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+        st.caption("Tip: load at least 1 year of data for meaningful volatility patterns. Short periods will appear flat.")
     else:
         st.info("Load a stock to get started.")
 
 with tab3:
     if "df" in st.session_state:
-        fig = show_drawdown(st.session_state.df)
+        fig = show_drawdown(st.session_state.df, rolling=rolling_window)
         st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
     else:    
         st.info("Load a stock to get started")
@@ -135,7 +149,7 @@ with tab4:
         if len(st.session_state.df) < 40:
             st.warning("Not enough data for anomaly detection — load at least 3 months.")
         else:
-            charts = show_anomaly_detection(st.session_state.df)
+            charts = show_anomaly_detection(st.session_state.df, rolling=rolling_window)
             method = st.selectbox("Method", list(charts.keys()))
             st.plotly_chart(charts[method](), use_container_width=True, config={"scrollZoom": True})
     else:
@@ -145,6 +159,7 @@ with tab5:
     if "df" in st.session_state:
         fig = show_fat_tails(st.session_state.df)
         st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+        st.caption("Kurtosis > 3 indicates fat tails (more extreme returns than a normal distribution). Skewness < 0 indicates left-skewed returns (more frequent large losses than gains).")
     else:
         st.info("Load a stock to get started.")
 
@@ -160,7 +175,7 @@ with tab6:
             preset = st.selectbox("Preset", list(presets.keys()))
         with col2:
             rolling = st.toggle("Rolling", value=False)
-        fig = show_correlation_heatmap(st.session_state.df, presets[preset], rolling=rolling)
+        fig = show_correlation_heatmap(st.session_state.df, presets[preset], rolling=rolling, window=rolling_window)
         st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
     else:
         st.info("Load a stock to get started.")

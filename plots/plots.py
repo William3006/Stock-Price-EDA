@@ -157,10 +157,10 @@ def show_returns_volatility(df, rolling=20):
     )
     return fig
 
-def show_drawdown(df):
+def show_drawdown(df, rolling=20):
     df = df.copy()
     df = add_return(df)
-    df = add_volatility(df, 20)
+    df = add_volatility(df, rolling)
     
     data = df['Close']
     df['max_cumclosing'] = data.cummax()
@@ -186,10 +186,10 @@ def show_drawdown(df):
     )
     return fig
 
-def show_anomaly_detection(df):
+def show_anomaly_detection(df, rolling=20):
     df = df.copy()
     df = add_return(df)
-    df = add_volatility(df, 20)
+    df = add_volatility(df, rolling)
     df = anomaly_detection(df)
     
     def build_fig(df, flag_col, lower=None, upper=None):
