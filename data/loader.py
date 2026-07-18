@@ -1,3 +1,5 @@
+import os
+os.makedirs("csv_saves", exist_ok=True)
 import matplotlib
 import sys
 if sys.platform == 'linux':
