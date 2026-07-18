@@ -9,7 +9,6 @@ from plots.plotly_plots import show_candle_stick, show_returns_volatility, show_
 
 st.set_page_config(page_title="SPEDA", layout="wide")
 
-
 def loading(ticker, period, save_name):
     df = load_new(ticker, period)
     save(df, save_name)
@@ -70,7 +69,6 @@ with st.sidebar:
 
 #title+info
 st.title("SPEDA — Stock Price Exploratory Data Analysis")
-st.caption(f"Reruns: {st.session_state.rerun_count}")
 if "df" in st.session_state:
     st.caption(f"{st.session_state.ticker} · {st.session_state.period} · {len(st.session_state.df)} rows · loaded {st.session_state.get('loaded_at', '')}")
 
