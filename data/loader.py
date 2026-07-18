@@ -1,5 +1,6 @@
 import os
-os.makedirs("csv_saves", exist_ok=True)
+CSV_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "csv_saves")
+os.makedirs(CSV_DIR, exist_ok=True)
 import matplotlib
 import sys
 if sys.platform == 'linux':
