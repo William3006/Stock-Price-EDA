@@ -51,7 +51,7 @@ def input_dialog():
 
 @st.dialog("Load Saved Data")
 def load_saved_dialog():
-    files = os.listdir("csv_saves")
+    files = os.listdir("csv_saves") if os.path.exists("csv_saves") else []
     selected = st.selectbox("Select File", files)
     if st.button("Load"):
         with st.spinner("Loading..."):
