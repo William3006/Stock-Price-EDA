@@ -11,11 +11,8 @@ st.set_page_config(page_title="SPEDA", layout="wide")
 
 def loading(ticker, period, save_name):
     df = load_new(ticker, period)
-    save(df, save_name)
-    df_loaded = load_raw(save_name)
-    st.text("Saved and loaded successfully")
     st.session_state.loaded_at = pd.Timestamp.now().strftime("%H:%M:%S")
-    return df_loaded
+    return df
 
 
 
