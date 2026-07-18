@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import os
 import sys
-sys.path.append("..")
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.loader import load_new, load_raw, save
 from plots.plotly_plots import show_candle_stick, show_returns_volatility, show_drawdown, show_anomaly_detection, show_fat_tails, show_correlation_heatmap
 
