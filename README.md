@@ -1,5 +1,6 @@
 # SPEDA — Stock Price Exploratory Data Analysis
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://stock-price-eda.streamlit.app/)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-FF4B4B?logo=streamlit&logoColor=white)
 ![Plotly](https://img.shields.io/badge/Plotly-interactive-3D4DB7?logo=plotly&logoColor=white)
