@@ -25,6 +25,9 @@ def load_raw(name, i=None, j=None):
     return pd.read_csv(path, skiprows=i, nrows=j, index_col='Date', parse_dates=True)
 
 def save(df, name):
-    path = os.path.join(CSV_DIR, f"{name}.csv")
-    df.to_csv(path, index=True)
-    print(f"Saved Successfully to {path}!")
+    try:
+        path = os.path.join(CSV_DIR, f"{name}.csv")
+        df.to_csv(path, index=True)
+        print(f"Saved Successfully to {path}!")
+    except OSError:
+        print("Save skipped: read-only filesystem")
